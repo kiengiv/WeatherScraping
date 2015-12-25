@@ -19,7 +19,7 @@ except:
 # - if you want January to March, your month range should be range(1,4) - if you want everything than do range(1,13)
 # - if you want 1 to 12, your day range shoudl be range(1,13) - if you want everything than do range (1,32)
 	
-for vYear in range(1980,2016):
+for vYear in range(2000,2016):
 	for vMonth in range(1,13):
 		for vDay in range(1,32):
 			#go to the next month, if it is a leap year and greater than the 29th or if it is not a leap year and greater than the 28th
@@ -43,8 +43,10 @@ for vYear in range(1980,2016):
 			soup=BeautifulSoup(thepage, "html.parser")
 			MaxWindSpeed=Visibility=Events=AvgWindSpeed=SeaLevelPressure=Precipitation=MinHumidity=MaxHumidity=AvgHumidity=DewPoint=HeatingDegreeDays=Min=Max=Mean="N/A"
 			for temp in soup.find_all('tr'):
-				if temp.text.strip().replace('\n','')[:6]=="Actual":
-					a=5
+				if temp.text.strip().replace('\n','')[:6]=="Actual" or temp.text.strip().replace('\n','')[-6:]=="Record":
+					pass
+				elif temp.text.replace('\n','')[-7:]=="RiseSet":
+					break
 				elif temp.find_all('td')[0].text=="Mean Temperature":
 					if temp.find_all('td')[1].text.strip()=="-":
 						Mean="N/A"
@@ -101,7 +103,7 @@ for vYear in range(1980,2016):
 					else:
 						SeaLevelPressure=temp.find_all('td')[1].find(attrs={"class":"wx-value"}).text
 				elif temp.find_all('td')[0].text=="Wind Speed":
-					if temp.find_all('td')[1].text.strip()=="-":
+					if temp.find_all('td')[1].text.strip()=="-" or temp.find_all('td')[1].text.strip().replace('\n','')=="- ()":
 						AvgWindSpeed="N/A"
 					else:
 						AvgWindSpeed=temp.find_all('td')[1].find(attrs={"class":"wx-value"}).text	
@@ -121,6 +123,7 @@ for vYear in range(1980,2016):
 					else:
 						Events=temp.find_all('td')[1].text.strip().replace(","," ").replace('\n','').replace('\t','')
 						break
+
 						
 			#combining the values to be written to the CSV file
 			CombinedString=theDate + ","+Mean+ ","+Max+ ","+Min+ ","+HeatingDegreeDays+ ","+DewPoint+ ","+AvgHumidity+ ","+MaxHumidity+ ","+MinHumidity+ ","+Precipitation+ ","+SeaLevelPressure+ ","+AvgWindSpeed+ ","+MaxWindSpeed+ ","+Visibility+ ","+Events + "\n"
