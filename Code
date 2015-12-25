@@ -1,0 +1,81 @@
+#Created by Kieng Iv to extract weather data from http://www.wunderground.com
+
+#Importing the necessary modules
+from bs4 import BeautifulSoup
+import urllib, csv, os, datetime, urllib.request, re, sys
+
+#creating CSV file to be used - each title is separated by a comma 
+try:
+	file = open(os.path.expanduser(r"~/Desktop/Weather Data.csv"), "wb")
+	file.write(b"Date,Mean Temperature,Max Temperature,Min Temperature,Heating Degree Days, Dew Point, Average Humidity, Max Humidity, Minimum Humidity, Percipitation, Sea Level Pressure, Average Wind Speed, Maximum Wind Speed, Visibility, Events"  + b"\n")
+except:
+	os.remove(os.path.expanduser(r"~/Desktop/Weather Data.csv"))
+	file = open(os.path.expanduser(r"~/Desktop/Weather Data.csv"), "wb")
+	file.write(b"Date,Mean Temperature,Max Temperature,Min Temperature,Heating Degree Days, Dew Point, Average Humidity, Max Humidity, Minimum Humidity, Percipitation, Sea Level Pressure, Average Wind Speed, Maximum Wind Speed, Visibility, Events"  + b"\n")
+
+
+#Looping based on year (vYear), month (vMonth) and date vDate)
+# - if you want 2014 to 2015, your year range should be range(2014,2016)
+# - if you want January to March, your month range should be range(1,4) - if you want everything than do range(1,13)
+# - if you want 1 to 12, your day range shoudl be range(1,13) - if you want everything than do range (1,32)
+	
+for vYear in range(2014,2015):
+	for vMonth in range(12,13):
+		for vDay in range(1,32):
+			#go to the next month, if it is a leap year and greater than the 29th or if it is not a leap year and greater than the 28th
+			if (vYear%4 == 0):
+				if (vMonth==2 and vDay>29):
+					break
+			else:
+				if (vMonth==2 and vDay>28):
+					break				
+			#go to the next month, if it is april, june, september or november and greater than the 30th
+			if (vMonth in [4, 6, 9, 11] and vDay>30):
+				break			
+			
+			#defining the date string to export and go to the next day using the url
+			theDate=str(vYear) + "/" + str(vMonth) + "/" + str(vDay)
+			
+			#the new url created after each day
+			theurl="http://www.wunderground.com/history/airport/CYTZ/" + theDate +"/DailyHistory.html"
+			#extract the source data for analysis
+			thepage = urllib.request.urlopen(theurl)
+			soup=BeautifulSoup(thepage, "html.parser") 
+			
+			## Extracting all the rest of the values
+			Max=soup.find_all('tr')[3].find_all('td')[1].find(attrs={"class":"wx-value"}).text			
+			
+			# Put "N/A" if mean is not available (denoted by "-")
+			if soup.find_all('tr')[2].find_all('td')[1].text.strip()=="-":
+				Mean="N/A"
+			else:
+				Mean=soup.find_all('tr')[2].find_all('td')[1].find(attrs={"class":"wx-value"}).text
+				
+			Min=soup.find_all('tr')[4].find_all('td')[1].find(attrs={"class":"wx-value"}).text
+			HeatingDegreeDays=soup.find_all('tr')[6].find_all('td')[1].text
+			
+			#If there is a row for growing degree days then change row the rest of the values will be pulling from
+			if soup.find_all('tr')[7].find_all('td')[0].text=="Growing Degree Days":
+				x=9
+			else:
+				x=8
+				
+			DewPoint=soup.find_all('tr')[x].find_all('td')[1].find(attrs={"class":"wx-value"}).text
+			AvgHumidity=soup.find_all('tr')[x+1].find_all('td')[1].text
+			MaxHumidity=soup.find_all('tr')[x+2].find_all('td')[1].text
+			MinHumidity=soup.find_all('tr')[x+3].find_all('td')[1].text
+			Percipitation=soup.find_all('tr')[x+5].find_all('td')[1].find(attrs={"class":"wx-value"}).text
+			SeaLevelPressure=soup.find_all('tr')[x+7].find_all('td')[1].find(attrs={"class":"wx-value"}).text
+			AvgWindSpeed=soup.find_all('tr')[x+9].find_all('td')[1].find(attrs={"class":"wx-value"}).text
+			MaxWindSpeed=soup.find_all('tr')[x+10].find_all('td')[1].find(attrs={"class":"wx-value"}).text
+			Visibility=soup.find_all('tr')[x+12].find_all('td')[1].find(attrs={"class":"wx-value"}).text
+			Events=soup.find_all('tr')[x+13].find_all('td')[1].text.strip().replace(","," ").replace('\n','').replace('\t','')
+			
+			#combining the values to be written to the CSV file
+			CombinedString=theDate + ","+Mean+ ","+Max+ ","+Min+ ","+HeatingDegreeDays+ ","+DewPoint+ ","+AvgHumidity+ ","+MaxHumidity+ ","+MinHumidity+ ","+Percipitation+ ","+SeaLevelPressure+ ","+AvgWindSpeed+ ","+MaxWindSpeed+ ","+Visibility+ ","+Events + "\n"
+			file.write(bytes(CombinedString, encoding="ascii",errors='ignore'))
+			
+			#printing to help with any debugging and tracking progress
+			print(CombinedString)
+			
+file.close()
