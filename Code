@@ -1,135 +1,130 @@
-#Created by Kieng Iv to extract weather data from http://www.wunderground.com
+# Created by Kieng Iv to extract weather data from http://www.wunderground.com
 
-#Importing the necessary modules
+# Importing the necessary modules
 from bs4 import BeautifulSoup
-import urllib, csv, os, datetime, urllib.request, re, sys
+import urllib, os, urllib.request
 
-#creating CSV file to be used - each title is separated by a comma 
-try:
-	file = open(os.path.expanduser(r"~/Desktop/Weather Data.csv"), "wb")
-	file.write(b"Date,Mean Temperature,Max Temperature,Min Temperature,Heating Degree Days, Dew Point, Average Humidity, Max Humidity, Minimum Humidity, Precipitation, Sea Level Pressure, Average Wind Speed, Maximum Wind Speed, Visibility, Events"  + b"\n")
-except:
-	os.remove(os.path.expanduser(r"~/Desktop/Weather Data.csv"))
-	file = open(os.path.expanduser(r"~/Desktop/Weather Data.csv"), "wb")
-	file.write(b"Date,Mean Temperature,Max Temperature,Min Temperature,Heating Degree Days, Dew Point, Average Humidity, Max Humidity, Minimum Humidity, Precipitation, Sea Level Pressure, Average Wind Speed, Maximum Wind Speed, Visibility, Events"  + b"\n")
+# creating CSV file to be used - each title is separated by a comma
+file = open(os.path.expanduser(r"~/Desktop/Weather Data.csv"), "wb")
+file.write(
+        b"Date,Mean Temperature,Max Temperature,Min Temperature,Heating Degree Days, Dew Point, Average Humidity, Max Humidity, Minimum Humidity, Precipitation, Sea Level Pressure, Average Wind Speed, Maximum Wind Speed, Visibility, Events" + b"\n")
 
-
-#Looping based on year (vYear), month (vMonth) and date vDate)
+# Looping based on year (vYear), month (vMonth) and date vDate)
 # - if you want 2014 to 2015, your year range should be range(2014,2016)
 # - if you want January to March, your month range should be range(1,4) - if you want everything than do range(1,13)
 # - if you want 1 to 12, your day range shoudl be range(1,13) - if you want everything than do range (1,32)
-	
-for vYear in range(2000,2016):
-	for vMonth in range(1,13):
-		for vDay in range(1,32):
-			#go to the next month, if it is a leap year and greater than the 29th or if it is not a leap year and greater than the 28th
-			if (vYear%4 == 0):
-				if (vMonth==2 and vDay>29):
-					break
-			else:
-				if (vMonth==2 and vDay>28):
-					break				
-			#go to the next month, if it is april, june, september or november and greater than the 30th
-			if (vMonth in [4, 6, 9, 11] and vDay>30):
-				break			
-			
-			#defining the date string to export and go to the next day using the url
-			theDate=str(vYear) + "/" + str(vMonth) + "/" + str(vDay)
-			
-			#the new url created after each day
-			theurl="http://www.wunderground.com/history/airport/CYTZ/" + theDate +"/DailyHistory.html"
-			#extract the source data for analysis
-			thepage = urllib.request.urlopen(theurl)
-			soup=BeautifulSoup(thepage, "html.parser")
-			MaxWindSpeed=Visibility=Events=AvgWindSpeed=SeaLevelPressure=Precipitation=MinHumidity=MaxHumidity=AvgHumidity=DewPoint=HeatingDegreeDays=Min=Max=Mean="N/A"
-			for temp in soup.find_all('tr'):
-				if temp.text.strip().replace('\n','')[:6]=="Actual" or temp.text.strip().replace('\n','')[-6:]=="Record":
-					pass
-				elif temp.text.replace('\n','')[-7:]=="RiseSet":
-					break
-				elif temp.find_all('td')[0].text=="Mean Temperature":
-					if temp.find_all('td')[1].text.strip()=="-":
-						Mean="N/A"
-					else:
-						Mean=temp.find_all('td')[1].find(attrs={"class":"wx-value"}).text                               
-				elif temp.find_all('td')[0].text=="Max Temperature":
-					if temp.find_all('td')[1].text.strip()=="-":
-						Max="N/A"
-					else:
-						Max=temp.find_all('td')[1].find(attrs={"class":"wx-value"}).text 
-				elif temp.find_all('td')[0].text=="Min Temperature":
-					if temp.find_all('td')[1].text.strip()=="-":
-						Min="N/A"
-					else:
-						Min=temp.find_all('td')[1].find(attrs={"class":"wx-value"}).text
-				elif temp.find_all('td')[0].text=="Growing Degree Days":
-					if temp.find_all('td')[1].text.strip()=="-":
-						GrowingDegreeDays="N/A"
-					else:
-						GrowingDegreeDays=temp.find_all('td')[1].text
-				elif temp.find_all('td')[0].text=="Heating Degree Days":
-					if temp.find_all('td')[1].text.strip()=="-":
-						HeatingDegreeDays="N/A"
-					else:
-						HeatingDegreeDays=temp.find_all('td')[1].text
-				elif temp.find_all('td')[0].text=="Dew Point":
-					if temp.find_all('td')[1].text.strip()=="-":
-						DewPoint="N/A"
-					else:
-						DewPoint=temp.find_all('td')[1].find(attrs={"class":"wx-value"}).text
-				elif temp.find_all('td')[0].text=="Average Humidity":
-						if temp.find_all('td')[1].text.strip()=="-":
-							AvgHumidity="N/A"
-						else:
-							AvgHumidity=temp.find_all('td')[1].text
-				elif temp.find_all('td')[0].text=="Maximum Humidity":
-					if temp.find_all('td')[1].text.strip()=="-":
-						MaxHumidity="N/A"
-					else:
-						MaxHumidity=temp.find_all('td')[1].text
-				elif temp.find_all('td')[0].text=="Minimum Humidity":
-					if temp.find_all('td')[1].text.strip()=="-":
-						MinHumidity="N/A"
-					else:
-						MinHumidity=temp.find_all('td')[1].text
-				elif temp.find_all('td')[0].text=="Precipitation" and temp.find_all('td')[1].text.strip()!="":
-					if temp.find_all('td')[1].text.strip()=="-":
-						Precipitation="N/A"
-					else:
-						Precipitation=temp.find_all('td')[1].find(attrs={"class":"wx-value"}).text
-				elif temp.find_all('td')[0].text=="Sea Level Pressure" and temp.find_all('td')[1].text.strip()!="":
-					if temp.find_all('td')[1].text.strip()=="-":
-						SeaLevelPressure="N/A"
-					else:
-						SeaLevelPressure=temp.find_all('td')[1].find(attrs={"class":"wx-value"}).text
-				elif temp.find_all('td')[0].text=="Wind Speed":
-					if temp.find_all('td')[1].text.strip()=="-" or temp.find_all('td')[1].text.strip().replace('\n','')=="- ()":
-						AvgWindSpeed="N/A"
-					else:
-						AvgWindSpeed=temp.find_all('td')[1].find(attrs={"class":"wx-value"}).text	
-				elif temp.find_all('td')[0].text=="Max Wind Speed":
-					   if temp.find_all('td')[1].text.strip()=="-":
-							   MaxWindSpeed="N/A"
-					   else:
-							   MaxWindSpeed=temp.find_all('td')[1].find(attrs={"class":"wx-value"}).text
-				elif temp.find_all('td')[0].text=="Visibility":
-					if temp.find_all('td')[1].text.strip()=="-":
-						Visibility="N/A"
-					else:
-						Visibility=temp.find_all('td')[1].find(attrs={"class":"wx-value"}).text	
-				elif temp.find_all('td')[0].text=="Events":
-					if temp.find_all('td')[1].text.strip()=="-":
-						Events="N/A"
-					else:
-						Events=temp.find_all('td')[1].text.strip().replace(","," ").replace('\n','').replace('\t','')
-						break
 
-						
-			#combining the values to be written to the CSV file
-			CombinedString=theDate + ","+Mean+ ","+Max+ ","+Min+ ","+HeatingDegreeDays+ ","+DewPoint+ ","+AvgHumidity+ ","+MaxHumidity+ ","+MinHumidity+ ","+Precipitation+ ","+SeaLevelPressure+ ","+AvgWindSpeed+ ","+MaxWindSpeed+ ","+Visibility+ ","+Events + "\n"
-			file.write(bytes(CombinedString, encoding="ascii",errors='ignore'))
-			
-			#printing to help with any debugging and tracking progress
-			print(CombinedString)
-			
+for vYear in range(2000, 2016):
+    for vMonth in range(1, 13):
+        for vDay in range(1, 32):
+            # go to the next month, if it is a leap year and greater than the 29th or if it is not a leap year
+            # and greater than the 28th
+            if vYear % 4 == 0:
+                if vMonth == 2 and vDay > 29:
+                    break
+            else:
+                if vMonth == 2 and vDay > 28:
+                    break
+            # go to the next month, if it is april, june, september or november and greater than the 30th
+            if vMonth in [4, 6, 9, 11] and vDay > 30:
+                break
+
+            # defining the date string to export and go to the next day using the url
+            theDate = str(vYear) + "/" + str(vMonth) + "/" + str(vDay)
+
+            # the new url created after each day
+            theurl = "http://www.wunderground.com/history/airport/CYTZ/" + theDate + "/DailyHistory.html"
+            # extract the source data for analysis
+            thepage = urllib.request.urlopen(theurl)
+            soup = BeautifulSoup(thepage, "html.parser")
+            MaxWindSpeed = Visibility = Events = AvgWindSpeed = SeaLevelPressure = Precipitation = MinHumidity = MaxHumidity = AvgHumidity = DewPoint = HeatingDegreeDays = Min = Max = Mean = "N/A"
+            for temp in soup.find_all('tr'):
+                if temp.text.strip().replace('\n', '')[:6] == 'Actual' or temp.text.strip().replace('\n', '')[-6:] == "Record":
+                    pass
+                elif temp.text.replace('\n', '')[-7:] == "RiseSet":
+                    break
+                elif temp.find_all('td')[0].text == "Mean Temperature":
+                    if temp.find_all('td')[1].text.strip() == "-":
+                        Mean = "N/A"
+                    else:
+                        Mean = temp.find_all('td')[1].find(attrs={"class": "wx-value"}).text
+                elif temp.find_all('td')[0].text == "Max Temperature":
+                    if temp.find_all('td')[1].text.strip() == "-":
+                        Max = "N/A"
+                    else:
+                        Max = temp.find_all('td')[1].find(attrs={"class": "wx-value"}).text
+                elif temp.find_all('td')[0].text == "Min Temperature":
+                    if temp.find_all('td')[1].text.strip() == "-":
+                        Min = "N/A"
+                    else:
+                        Min = temp.find_all('td')[1].find(attrs={"class": "wx-value"}).text
+                elif temp.find_all('td')[0].text == "Growing Degree Days":
+                    if temp.find_all('td')[1].text.strip() == "-":
+                        GrowingDegreeDays = "N/A"
+                    else:
+                        GrowingDegreeDays = temp.find_all('td')[1].text
+                elif temp.find_all('td')[0].text == "Heating Degree Days":
+                    if temp.find_all('td')[1].text.strip() == "-":
+                        HeatingDegreeDays = "N/A"
+                    else:
+                        HeatingDegreeDays = temp.find_all('td')[1].text
+                elif temp.find_all('td')[0].text == "Dew Point":
+                    if temp.find_all('td')[1].text.strip() == "-" or temp.find_all('td')[1].text.strip() == "":
+                        DewPoint = "N/A"
+                    else:
+                        DewPoint = temp.find_all('td')[1].find(attrs={"class": "wx-value"}).text
+                elif temp.find_all('td')[0].text == "Average Humidity":
+                    if temp.find_all('td')[1].text.strip() == "-" or temp.find_all('td')[1].text.strip() == "":
+                        AvgHumidity = "N/A"
+                    else:
+                        AvgHumidity = temp.find_all('td')[1].text
+                elif temp.find_all('td')[0].text == "Maximum Humidity":
+                    if temp.find_all('td')[1].text.strip() == "-" or temp.find_all('td')[1].text.strip() == "":
+                        MaxHumidity = "N/A"
+                    else:
+                        MaxHumidity = temp.find_all('td')[1].text
+                elif temp.find_all('td')[0].text == "Minimum Humidity":
+                    if temp.find_all('td')[1].text.strip() == "-" or temp.find_all('td')[1].text.strip() == "":
+                        MinHumidity = "N/A"
+                    else:
+                        MinHumidity = temp.find_all('td')[1].text
+                elif temp.find_all('td')[0].text == "Precipitation" and temp.find_all('td')[1].text.strip() != "":
+                    if temp.find_all('td')[1].text.strip() == "-" or temp.find_all('td')[1].text.strip() == "":
+                        Precipitation = "N/A"
+                    else:
+                        Precipitation = temp.find_all('td')[1].find(attrs={"class": "wx-value"}).text
+                elif temp.find_all('td')[0].text == "Sea Level Pressure" and temp.find_all('td')[1].text.strip() != "":
+                    if temp.find_all('td')[1].text.strip() == "-":
+                        SeaLevelPressure = "N/A"
+                    else:
+                        SeaLevelPressure = temp.find_all('td')[1].find(attrs={"class": "wx-value"}).text
+                elif temp.find_all('td')[0].text == "Wind Speed":
+                    if temp.find_all('td')[1].text.strip() == "-" or temp.find_all('td')[1].text.strip().replace('\n','') == "- ()" or temp.find_all('td')[1].text.strip() == "":
+                        AvgWindSpeed = "N/A"
+                    else:
+                        AvgWindSpeed = temp.find_all('td')[1].find(attrs={"class": "wx-value"}).text
+                elif temp.find_all('td')[0].text == "Max Wind Speed":
+                    if temp.find_all('td')[1].text.strip() == "-" or temp.find_all('td')[1].text.strip() == "":
+                        MaxWindSpeed = "N/A"
+                    else:
+                        MaxWindSpeed = temp.find_all('td')[1].find(attrs={"class": "wx-value"}).text
+                elif temp.find_all('td')[0].text == "Visibility":
+                    if temp.find_all('td')[1].text.strip() == "-":
+                        Visibility = "N/A"
+                    else:
+                        Visibility = temp.find_all('td')[1].find(attrs={"class": "wx-value"}).text
+                elif temp.find_all('td')[0].text == "Events":
+                    if temp.find_all('td')[1].text.strip() == "-":
+                        Events = "N/A"
+                    else:
+                        Events = temp.find_all('td')[1].text.strip().replace(",", " ").replace('\n', '').replace('\t','')
+                        break
+
+            # combining the values to be written to the CSV file
+            CombinedString = theDate + "," + Mean + "," + Max + "," + Min + "," + HeatingDegreeDays + "," + DewPoint + "," + AvgHumidity + "," + MaxHumidity + "," + MinHumidity + "," + Precipitation + "," + SeaLevelPressure + "," + AvgWindSpeed + "," + MaxWindSpeed + "," + Visibility + "," + Events + "\n"
+            file.write(bytes(CombinedString, encoding="ascii", errors='ignore'))
+
+            # printing to help with any debugging and tracking progress
+            print(CombinedString)
+
 file.close()
